@@ -89,9 +89,9 @@ Param(
         [Parameter()]
         [switch]$sendEmail,
 
-        #Sender Email Address
+        #Sender Email Address. Not named sender, as name would overlap with PS inbuilts
         [Parameter()]
-        [string]$sender,
+        [string]$mailSender,
 
         #Recipient Email Addresses - separate with comma
         [Parameter()]
@@ -224,9 +224,9 @@ $isAllGood = $true
 
 if ($sendEmail)
 {
-    if (!$sender)
+    if (!$mailSender)
     {
-        Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": ERROR: A valid sender email address is not specified." -ForegroundColor Yellow
+        Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": ERROR: A valid mailSender email address is not specified." -ForegroundColor Yellow
         $isAllGood = $false
     }
 
@@ -417,6 +417,9 @@ $fileParams
 Write-Host ""
 [datetime]$oldDate = (Get-Date).AddDays(-$daysToKeep)
 
+
+# this is where the magic happens:
+
 #$filesToDelete = Get-ChildItem @fileParams | Where-Object {$_.LastWriteTime -lt $oldDate -and !$_.PSIsContainer}
 $filesToDelete = @()
 foreach ($fInclude in $Include){
@@ -544,7 +547,7 @@ if ($filesToDelete)
     if ($sendEmail)
     {
         $mailParams = @{
-            From = $sender
+            From = $mailSender
             To = $recipients
             Subject = $mailSubject + ": " + ('{0:dd-MMM-yyyy hh:mm tt}' -f $Today)
             Body = $htmlBody
