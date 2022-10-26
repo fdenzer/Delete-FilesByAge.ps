@@ -3,4 +3,4 @@
 *.csv
 *.html
 working-directory/
-.gitignore
+another directory with whitespace/
