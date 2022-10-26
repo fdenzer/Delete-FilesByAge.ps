@@ -423,7 +423,7 @@ if ($filesToDelete) {
     foreach ($file in $filesToDelete) {
         $temp = "" | Select-Object FileName, FileSize, Status        
         $temp.FileName = $file.FullName
-        $temp.FileSize = $file.Length
+        $temp.FileSize = (-join($file.Length, ' bytes'))
         
         try {
             Remove-Item -Path ($file.FullName) -Force -Confirm:$false -ErrorAction Stop
@@ -440,7 +440,7 @@ if ($filesToDelete) {
         }
         $resultLog += $temp
     }
-    $resultLog >> $outputCSV # Export-Csv -NoTypeInformation
+    $resultLog | Out-File -FilePath $outputCSV # Export-Csv -NoTypeInformation
     $summary = "" | Select-Object Paths, TotalNumberOfFiles, TotalSizeOfAllFiles, SuccessfulDeletions, FailedDeletions, TotalSuccessfulDeletionSize, TotalFailedDeletionSize
     $summary.Paths = $Paths
     $summary.TotalNumberOfFiles = "{0:N0}" -f ($filesToDelete).Count
