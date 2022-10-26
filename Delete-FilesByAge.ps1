@@ -584,7 +584,6 @@ if ($filesToDelete)
             sections = @(
                 @{
                     activityTitle = "Delete Files Older Than $($daysToKeep) Days"
-                    activityImage = "https://raw.githubusercontent.com/junecastillote/Delete-FilesByAge/master/res/deleteFBAIcon.png"
                     activityText = ""
                 },
                 @{

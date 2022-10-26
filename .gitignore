@@ -2,3 +2,5 @@
 *.log
 *.csv
 *.html
+working-directory/
+.gitignore
