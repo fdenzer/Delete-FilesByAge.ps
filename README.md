@@ -7,10 +7,10 @@
 > See: run_on_working_dir.ps1
 
 ```powershell
-$dir_list = 'working-directory' #, ...
+$input_directories = 'working-directory' #, ...
 $days = 1
-$outdir = 'outdir'
+$log_directory = 'outdir'
 
-.\Delete-FilesByAge.ps1 $dir_list "*.*" "" $days $outdir -Recurse
+.\Delete-FilesByAge.ps1 $input_directories "*.*" "" $days $log_directory -Recurse
 ```
 
