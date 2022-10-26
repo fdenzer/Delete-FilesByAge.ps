@@ -417,13 +417,6 @@ $fileParams
 Write-Host ""
 [datetime]$oldDate = (Get-Date).AddDays(-$daysToKeep)
 
-# sample usage:
-#.\Delete-FilesByAge.ps1 newdir "*.*" "" 1 outdir -Recurse
-# make files and folders old:
-# $file = Get-Item newdir/newfile
-# $file.LastWriteTime = (Get-Date -Day 1)
-# $folder = Get-Item newdir/newdir
-# $folder.LastWriteTime = (Get-Date -Day 1)
 
 # this is where the magic happens:
 
