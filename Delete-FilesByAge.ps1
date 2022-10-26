@@ -54,147 +54,138 @@
 #> 
 Param(
 
-        #paths to clean up (eg. "c:\Folder1","c:\folder2")
-        [Parameter(Mandatory=$true)]
-        [string[]]$Paths,
+    #paths to clean up (eg. "c:\Folder1","c:\folder2")
+    [Parameter(Mandatory = $true)]
+    [string[]]$Paths,
 
-        #list of files or extension to INCLUDE (eg. *.blg,*.txt)
-        [Parameter(Mandatory=$true)]
-        [string[]]$Include,
+    #list of files or extension to INCLUDE (eg. *.blg,*.txt)
+    [Parameter(Mandatory = $true)]
+    [string[]]$Include,
 
-        #list of files or extension to EXCLUDE (eg. *.blg,*.txt)
-        [Parameter(Mandatory=$false)]
-        [string[]]$Exclude,
+    #list of files or extension to EXCLUDE (eg. *.blg,*.txt)
+    [Parameter(Mandatory = $false)]
+    [string[]]$Exclude,
 
-        #switch to indicate recursive action
-        [Parameter()]
-        [switch]$Recurse,
+    #switch to indicate recursive action
+    [Parameter()]
+    [switch]$Recurse,
 
-        [Parameter(Mandatory=$true)]
-        [int]$daysToKeep,
+    [Parameter(Mandatory = $true)]
+    [int]$daysToKeep,
 
-        #path to the output/Report directory (eg. c:\scripts\output)
-        [Parameter(Mandatory=$true)]
-		[string]$outputDirectory,
+    #path to the output/Report directory (eg. c:\scripts\output)
+    [Parameter(Mandatory = $true)]
+    [string]$outputDirectory,
 
-        #path to the log directory (eg. c:\scripts\logs)
-        [Parameter()]
-        [string]$logDirectory,
+    #path to the log directory (eg. c:\scripts\logs)
+    [Parameter()]
+    [string]$logDirectory,
 
-        #prefix string for the report (ex. COMPANY)
-        [Parameter()]
-        [string]$headerPrefix,
+    #prefix string for the report (ex. COMPANY)
+    [Parameter()]
+    [string]$headerPrefix,
         
-        #Switch to enable email report
-        [Parameter()]
-        [switch]$sendEmail,
+    #Switch to enable email report
+    [Parameter()]
+    [switch]$sendEmail,
 
-        #Sender Email Address. Not named sender, as name would overlap with PS inbuilts
-        [Parameter()]
-        [string]$mailSender,
+    #Sender Email Address. Not named sender, as name would overlap with PS inbuilts
+    [Parameter()]
+    [string]$mailSender,
 
-        #Recipient Email Addresses - separate with comma
-        [Parameter()]
-        [string[]]$recipients,
+    #Recipient Email Addresses - separate with comma
+    [Parameter()]
+    [string[]]$recipients,
 
-        #smtpServer
-        [Parameter()]
-        [string]$smtpServer,
+    #smtpServer
+    [Parameter()]
+    [string]$smtpServer,
 
-        #smtpPort
-        [Parameter()]
-        [string]$smtpPort,
+    #smtpPort
+    [Parameter()]
+    [string]$smtpPort,
 
-        #credential for SMTP server (if applicable)
-        [Parameter()]
-        [pscredential]$smtpCredential,
+    #credential for SMTP server (if applicable)
+    [Parameter()]
+    [pscredential]$smtpCredential,
 
-        #switch to indicate if SSL will be used for SMTP relay
-        [Parameter()]
-        [switch]$smtpSSL,
+    #switch to indicate if SSL will be used for SMTP relay
+    [Parameter()]
+    [switch]$smtpSSL,
 
-        #accepts Teams WebHook URI
-        [Parameter()]
-        [string[]]$notifyTeams
+    #accepts Teams WebHook URI
+    [Parameter()]
+    [string[]]$notifyTeams
 )
 
 #...................................
 #Region FUNCTION
 #...................................
 #Function to Stop Transaction Logging
-Function Stop-TxnLogging
-{
-	$txnLog=""
-	Do {
-		try {
-			Stop-Transcript | Out-Null
-		} 
-        catch [System.InvalidOperationException]
-        {
-			$txnLog="stopped"
-		}
+Function Stop-TxnLogging {
+    $txnLog = ""
+    Do {
+        try {
+            Stop-Transcript | Out-Null
+        } 
+        catch [System.InvalidOperationException] {
+            $txnLog = "stopped"
+        }
     } While ($txnLog -ne "stopped")
 }
 
 #Function to Start Transaction Logging
-Function Start-TxnLogging
-{
+Function Start-TxnLogging {
     param 
     (
-        [Parameter(Mandatory=$true,Position=0)]
+        [Parameter(Mandatory = $true, Position = 0)]
         [string]$logDirectory
     )
-	Stop-TxnLogging
+    Stop-TxnLogging
     Start-Transcript $logDirectory -Append
 }
 
 #Function to get Script Version and ProjectURI for PSv4
-Function Get-ScriptInfo
-{
+Function Get-ScriptInfo {
     param
     (
-        [Parameter(Mandatory=$true,Position=0)]
+        [Parameter(Mandatory = $true, Position = 0)]
         [string]$Path
-	)
+    )
 	
-	$scriptFile = Get-Content $Path
+    $scriptFile = Get-Content $Path
 
-	$props = @{
-		Version = ""
-		ProjectURI = ""
-	}
+    $props = @{
+        Version    = ""
+        ProjectURI = ""
+    }
 
-	$scriptInfo = New-Object PSObject -Property $props
+    $scriptInfo = New-Object PSObject -Property $props
 
-	# Get Version
-	foreach ($line in $scriptFile)
-	{	
-		if ($line -like ".VERSION*")
-		{
-			$scriptInfo.Version = $line.Split(" ")[1]
-			BREAK
-		}	
-	}
+    # Get Version
+    foreach ($line in $scriptFile) {	
+        if ($line -like ".VERSION*") {
+            $scriptInfo.Version = $line.Split(" ")[1]
+            BREAK
+        }	
+    }
 
-	# Get ProjectURI
-	foreach ($line in $scriptFile)
-	{
-		if ($line -like ".PROJECTURI*")
-		{
-			$scriptInfo.ProjectURI = $line.Split(" ")[1]
-			BREAK
-		}		
-	}
-	Remove-Variable scriptFile
+    # Get ProjectURI
+    foreach ($line in $scriptFile) {
+        if ($line -like ".PROJECTURI*") {
+            $scriptInfo.ProjectURI = $line.Split(" ")[1]
+            BREAK
+        }		
+    }
+    Remove-Variable scriptFile
     Return $scriptInfo
 }
 
 #Function to get current system timezone (for PS versions below 5)
-Function Get-TimeZoneInfo
-{  
-	$tzName = ([System.TimeZone]::CurrentTimeZone).StandardName
-	$tzInfo = [System.TimeZoneInfo]::FindSystemTimeZoneById($tzName)
-	Return $tzInfo	
+Function Get-TimeZoneInfo {  
+    $tzName = ([System.TimeZone]::CurrentTimeZone).StandardName
+    $tzInfo = [System.TimeZoneInfo]::FindSystemTimeZoneById($tzName)
+    Return $tzInfo	
 }
 #...................................
 #EndRegion FUNCTION
@@ -202,12 +193,10 @@ Function Get-TimeZoneInfo
 #...................................
 #Region SCRIPT INFO
 #...................................
-if ($PSVersionTable.psversion.Major -lt 5) 
-{
+if ($PSVersionTable.psversion.Major -lt 5) {
     $scriptInfo = Get-ScriptInfo -Path $MyInvocation.MyCommand.Definition
 }
-else 
-{
+else {
     $scriptInfo = Test-ScriptFileInfo -Path $MyInvocation.MyCommand.Definition
 }
 #...................................
@@ -222,35 +211,29 @@ $timeZoneInfo = Get-TimeZoneInfo
 #...................................
 $isAllGood = $true
 
-if ($sendEmail)
-{
-    if (!$mailSender)
-    {
+if ($sendEmail) {
+    if (!$mailSender) {
         Write-Host (get-date -Format "o") ": ERROR: A valid mailSender email address is not specified." -ForegroundColor Yellow
         $isAllGood = $false
     }
 
-    if (!$recipients)
-    {
+    if (!$recipients) {
         Write-Host (get-date -Format "o") ": ERROR: No recipients specified." -ForegroundColor Yellow
         $isAllGood = $false
     }
 
-    if (!$smtpServer )
-    {
+    if (!$smtpServer ) {
         Write-Host (get-date -Format "o") ": ERROR: No SMTP Server specified." -ForegroundColor Yellow
         $isAllGood = $false
     }
 
-    if (!$smtpPort )
-    {
+    if (!$smtpPort ) {
         Write-Host (get-date -Format "o") ": ERROR: No SMTP Port specified." -ForegroundColor Yellow
         $isAllGood = $false
     }
 }
 
-if ($isAllGood -eq $false)
-{
+if ($isAllGood -eq $false) {
     Write-Host (get-date -Format "o") ": ERROR: Exiting Script." -ForegroundColor Yellow
     EXIT
 }
@@ -380,24 +363,20 @@ $outputCSV = "$($outputDirectory)\delete-Summary_$($fileSuffix).csv"
 $outputHTML = "$($outputDirectory)\delete-Summary_$($fileSuffix).html"
 
 #Create folders if not found
-if ($logDirectory)
-{
-    if (!(Test-Path $logDirectory)) 
-    {
+if ($logDirectory) {
+    if (!(Test-Path $logDirectory)) {
         New-Item -ItemType Directory -Path $logDirectory | Out-Null
         #start transcribing----------------------------------------------------------------------------------
         Start-TxnLogging $logFile
         #----------------------------------------------------------------------------------------------------
     }
-	else
-	{
-		Start-TxnLogging $logFile
-	}
+    else {
+        Start-TxnLogging $logFile
+    }
 }
 
-if (!(Test-Path $outputDirectory))
-{
-	New-Item -ItemType Directory -Path $outputDirectory | Out-Null
+if (!(Test-Path $outputDirectory)) {
+    New-Item -ItemType Directory -Path $outputDirectory | Out-Null
 }
 #...................................
 #EndRegion PARAMETER CHECK
@@ -410,8 +389,8 @@ $fileParams = @{
     Path = $Paths
 }
 
-if ($Recurse){$fileParams+=@{Recurse=$true}}
-if ($Exclude){$fileParams+=@{Exclude=$Exclude}}
+if ($Recurse) { $fileParams += @{Recurse = $true } }
+if ($Exclude) { $fileParams += @{Exclude = $Exclude } }
 
 $fileParams
 Write-Host ""
@@ -422,8 +401,8 @@ Write-Host ""
 
 #$filesToDelete = Get-ChildItem @fileParams | Where-Object {$_.LastWriteTime -lt $oldDate -and !$_.PSIsContainer}
 $filesToDelete = @()
-foreach ($fInclude in $Include){
-    $temp = Get-ChildItem @fileParams -Filter $fInclude | Where-Object {$_.LastWriteTime -lt $oldDate -and !$_.PSIsContainer}
+foreach ($fInclude in $Include) {
+    $temp = Get-ChildItem @fileParams -Filter $fInclude | Where-Object { $_.LastWriteTime -lt $oldDate -and !$_.PSIsContainer }
     $filesToDelete += $temp
 }
 
@@ -434,37 +413,35 @@ foreach ($fInclude in $Include){
 #...................................
 #Region FILE DELETION
 #...................................
-if ($filesToDelete)
-{
+if ($filesToDelete) {
     Write-Host (get-date -Format "o") ": Found Total of $($filesToDelete.Count) files" -ForegroundColor Green
     $resultLog = @()
     $successful = 0
     $failed = 0
     [int64]$deletedSize = 0
     [int64]$failedSize = 0
-    foreach ($file in $filesToDelete)
-    {
-        $temp = "" | Select-Object FileName,FileSize,Status        
+    foreach ($file in $filesToDelete) {
+        $temp = "" | Select-Object FileName, FileSize, Status        
         $temp.FileName = $file.FullName
         $temp.FileSize = $file.Length
         
         try {
-			Remove-Item -Path ($file.FullName) -Force -Confirm:$false -ErrorAction Stop
+            Remove-Item -Path ($file.FullName) -Force -Confirm:$false -ErrorAction Stop
             $temp.Status = "Success"
-            $successful = $successful+1
+            $successful = $successful + 1
             $deletedSize = $deletedSize + $file.Length
             Write-Host (get-date -Format "o") ": Delete $($file.FullName) - Success " -ForegroundColor Green
-		}
-		catch {
+        }
+        catch {
             $temp.Status = "Failed"
-            $failed = $failed+1
+            $failed = $failed + 1
             $failedSize = $failedSize + $file.Length
-			Write-Host (get-date -Format "o") ": Delete $($file.FullName) - Failed " -ForegroundColor Red
-		}        
+            Write-Host (get-date -Format "o") ": Delete $($file.FullName) - Failed " -ForegroundColor Red
+        }
         $resultLog += $temp
     }
-    $resultLog | Export-Csv -NoTypeInformation $outputCSV
-    $summary = "" | Select-Object Paths,TotalNumberOfFiles,TotalSizeOfAllFiles,SuccessfulDeletions,FailedDeletions,TotalSuccessfulDeletionSize,TotalFailedDeletionSize
+    $resultLog >> $outputCSV # Export-Csv -NoTypeInformation
+    $summary = "" | Select-Object Paths, TotalNumberOfFiles, TotalSizeOfAllFiles, SuccessfulDeletions, FailedDeletions, TotalSuccessfulDeletionSize, TotalFailedDeletionSize
     $summary.Paths = $Paths
     $summary.TotalNumberOfFiles = "{0:N0}" -f ($filesToDelete).Count
     $summary.TotalSizeOfAllFiles = "{0:N0}" -f ($filesToDelete | Measure-Object -Property Length -Sum).Sum
@@ -480,12 +457,10 @@ if ($filesToDelete)
     #Region HTML
     #...................................
 
-    if ($headerPrefix)
-    {
+    if ($headerPrefix) {
         $mailSubject = "[" + $headerPrefix + "] File Deletion Task Summary"
     }
-    else 
-    {
+    else {
         $mailSubject = "File Deletion Task Summary"
     }
    
@@ -494,20 +469,18 @@ if ($filesToDelete)
     $htmlBody += '</head><body><p><font size="2" face="Tahoma">'
     $htmlBody += '<table id="HeadingInfo">'
 
-    if ($headerPrefix)
-    {
-        $htmlBody += '<tr><th>'+ $headerPrefix + '<br />Delete Files Older Than ' + $daysToKeep + ' Days<br / >'+ $today +'</th></tr>'
+    if ($headerPrefix) {
+        $htmlBody += '<tr><th>' + $headerPrefix + '<br />Delete Files Older Than ' + $daysToKeep + ' Days<br / >' + $today + '</th></tr>'
     }
-    else 
-    {
-        $htmlBody += '<tr><th>Delete Files Older Than ' + $daysToKeep + ' Days<br / >'+ $today +'</th></tr>'
+    else {
+        $htmlBody += '<tr><th>Delete Files Older Than ' + $daysToKeep + ' Days<br / >' + $today + '</th></tr>'
     }
     $htmlBody += '</table><hr />'
     $htmlBody += '<table id="SectionLabels">'
     $htmlBody += '<tr><th class="data">Summary</th></tr></table>'
     $htmlBody += '<table id="data">'
-    $htmlBody += '<tr><th width="15%">Computer</th><td>'+ $env:COMPUTERNAME +'</td></tr>'
-    $htmlBody += '<tr><th>Paths</th><td>'+ ($Paths -join "<br />") +'</td></tr>'
+    $htmlBody += '<tr><th width="15%">Computer</th><td>' + $env:COMPUTERNAME + '</td></tr>'
+    $htmlBody += '<tr><th>Paths</th><td>' + ($Paths -join "<br />") + '</td></tr>'
     $htmlBody += '<tr><th>Successful Deletion</th><td class="good">' + ($summary.SuccessfulDeletions) + ' files (' + ($summary.TotalSuccessfulDeletionSize) + ' bytes)</td></tr>'
     $htmlBody += '<tr><th>Failed Deletion</th><td class="bad">' + ($summary.FailedDeletions) + ' files (' + ($summary.TotalFailedDeletionSize) + ' bytes)</td></tr>'
     $htmlBody += '<tr><th>Total Files</th><td>' + ($summary.TotalNumberOfFiles) + ' files (' + ($summary.TotalSizeOfAllFiles) + ' bytes)</td></tr>'
@@ -517,14 +490,14 @@ if ($filesToDelete)
     $htmlBody += '<table id="SectionLabels">'
     $htmlBody += '<tr><th class="data">Settings</th></tr></table>'
     $htmlBody += '<table id="data">'
-    $htmlBody += '<tr><th width="15%">Included</th><td>'+ ($Include -join ";") +'</td></tr>'
-    $htmlBody += '<tr><th width="15%">Excluded</th><td>'+ ($Exclude -join ";") +'</td></tr>'
-    $htmlBody += '<tr><th width="15%">Recursive</th><td>'+ (invoke-command {if ($Recurse) {return "Yes"} else {return "No"}}) +'</td></tr>'
-    $htmlBody += '<tr><th width="15%">Send Email Report</th><td>'+ (invoke-command {if ($sendEmail) {return "Yes"} else {return "No"}}) +'</td></tr>'
-    $htmlBody += '<tr><th width="15%">SMTP Server Name or IP</th><td>'+ $smtpServer +'</td></tr>'
-    $htmlBody += '<tr><th width="15%">SMTP Server Port</th><td>'+ $smtpPort +'</td></tr>'
-    $htmlBody += '<tr><th width="15%">SMTP SSL in Use</th><td>'+ (invoke-command {if ($smtpSSL) {return "Yes"} else {return "No"}}) +'</td></tr>'
-    $htmlBody += '<tr><th width="15%">SMTP Login Required</th><td>' + (invoke-command {if ($smtpCredential) {return "Yes"} else {return "No"}}) + '</td></tr>'
+    $htmlBody += '<tr><th width="15%">Included</th><td>' + ($Include -join ";") + '</td></tr>'
+    $htmlBody += '<tr><th width="15%">Excluded</th><td>' + ($Exclude -join ";") + '</td></tr>'
+    $htmlBody += '<tr><th width="15%">Recursive</th><td>' + (invoke-command { if ($Recurse) { return "Yes" } else { return "No" } }) + '</td></tr>'
+    $htmlBody += '<tr><th width="15%">Send Email Report</th><td>' + (invoke-command { if ($sendEmail) { return "Yes" } else { return "No" } }) + '</td></tr>'
+    $htmlBody += '<tr><th width="15%">SMTP Server Name or IP</th><td>' + $smtpServer + '</td></tr>'
+    $htmlBody += '<tr><th width="15%">SMTP Server Port</th><td>' + $smtpPort + '</td></tr>'
+    $htmlBody += '<tr><th width="15%">SMTP SSL in Use</th><td>' + (invoke-command { if ($smtpSSL) { return "Yes" } else { return "No" } }) + '</td></tr>'
+    $htmlBody += '<tr><th width="15%">SMTP Login Required</th><td>' + (invoke-command { if ($smtpCredential) { return "Yes" } else { return "No" } }) + '</td></tr>'
     $htmlBody += '<tr><th width="15%">Script File</th><td>' + $MyInvocation.MyCommand.Definition + '</td></tr>'
     $htmlBody += '<tr><th width="15%">Csv Report File</th><td>' + $outputCSV + '</td></tr>'
     $htmlBody += '<tr><th width="15%">Html Report File</th><td>' + $outputHTML + '</td></tr>'
@@ -544,23 +517,22 @@ if ($filesToDelete)
     #...................................
     #Region EMAIL
     #...................................
-    if ($sendEmail)
-    {
+    if ($sendEmail) {
         $mailParams = @{
-            From = $mailSender
-            To = $recipients
-            Subject = $mailSubject + ": " + ('{0:yyyy-MM-dd-hh:mmTHH:mm:ss}' -f $today)
-            Body = $htmlBody
-            BodyAsHTML = $true
-            smtpServer = $smtpServer
-            Port = $smtpPort
-            useSSL = $smtpSSL
+            From        = $mailSender
+            To          = $recipients
+            Subject     = $mailSubject + ": " + ('{0:yyyy-MM-dd-hh:mmTHH:mm:ss}' -f $today)
+            Body        = $htmlBody
+            BodyAsHTML  = $true
+            smtpServer  = $smtpServer
+            Port        = $smtpPort
+            useSSL      = $smtpSSL
             attachments = $outputCSV
         }
 
         #SMTP Authentication
-        if ($smtpCredential){
-            $mailParams += @{credential = $smtpCredential}
+        if ($smtpCredential) {
+            $mailParams += @{credential = $smtpCredential }
         }
 
         Write-Host (get-date -Format "o") ": Sending email to" ($recipients -join ",") -ForegroundColor Green
@@ -575,38 +547,37 @@ if ($filesToDelete)
     #...................................
     #Region TEAMS
     #...................................
-    if ($notifyTeams)
-    {
+    if ($notifyTeams) {
         $teamsMessage = ConvertTo-Json -Depth 4 @{
-            title = $mailSubject
-            text = ('{0:yyyy-MM-dd-hh:mmTHH:mm:ss}' -f $today)
+            title    = $mailSubject
+            text     = ('{0:yyyy-MM-dd-hh:mmTHH:mm:ss}' -f $today)
     
             sections = @(
                 @{
                     activityTitle = "Delete Files Older Than $($daysToKeep) Days"
-                    activityText = ""
+                    activityText  = ""
                 },
                 @{
                     title = "<h4>Summary</h4>"
                     facts = @(
                         @{
-                            name = "Computer:"
+                            name  = "Computer:"
                             value = "$($env:COMPUTERNAME)"
                         },
                         @{
-                            name = "Paths:"
+                            name  = "Paths:"
                             value = ($Paths -join ";<br />")
                         },
                         @{
-                            name = "Total Number of Files: "
+                            name  = "Total Number of Files: "
                             value = "$($summary.TotalNumberOfFiles) files ($($summary.TotalSizeOfAllFiles)) bytes)"
                         },
                         @{
-                            name = "Successful Deletion:"
+                            name  = "Successful Deletion:"
                             value = "<font color=""Green"">$($summary.SuccessfulDeletions) files ($($summary.TotalSuccessfulDeletionSize) bytes)</font>"
                         },
                         @{
-                            name = "Failed Deletion:"
+                            name  = "Failed Deletion:"
                             value = "<font color=""Red"">$($summary.FailedDeletions) files ($($summary.TotalFailedDeletionSize) bytes)</font>"
                         }
                     )
@@ -616,31 +587,31 @@ if ($filesToDelete)
                     title = "<h4>Settings</h4>"
                     facts = @(
                         @{
-                            name = "Include:"
+                            name  = "Include:"
                             value = ($Include -join ";")
                         },
                         @{
-                            name = "Exclude:"
+                            name  = "Exclude:"
                             value = ($Exclude -join ";")
                         },
                         @{
-                            name = "Recurse:"
+                            name  = "Recurse:"
                             value = "$($Recurse)"
                         }
                         @{
-                            name = "Script File:"
+                            name  = "Script File:"
                             value = $MyInvocation.MyCommand.Definition
                         }
                         @{
-                            name = "Csv Report File:"
+                            name  = "Csv Report File:"
                             value = $outputCSV
                         }
                         @{
-                            name = "Html Report File:"
+                            name  = "Html Report File:"
                             value = $outputHTML
                         },
                         @{
-                            name = "Script Version:"
+                            name  = "Script Version:"
                             value = "<a href=""$($scriptInfo.ProjectURI)"">$($MyInvocation.MyCommand.Definition.ToString().Split("\")[-1].Split(".")[0]) $($scriptInfo.version)</a>"
                         }
                     )
@@ -650,8 +621,7 @@ if ($filesToDelete)
 
         Write-Host (get-date -Format "o") ": Sending Teams Notification" -ForegroundColor Green
         
-        foreach ($uri in $notifyTeams)
-        {
+        foreach ($uri in $notifyTeams) {
             try {
                 Invoke-RestMethod -uri $uri -Method Post -body $teamsMessage -ContentType 'application/json' -ErrorAction Stop
                 Write-Host "SUCCESS: $($uri)" -ForegroundColor Green
@@ -668,8 +638,7 @@ if ($filesToDelete)
     Write-Host (get-date -Format "o") ": HTML Summary Report saved in $outputHTML " -ForegroundColor Cyan
     Write-Host (get-date -Format "o") ": CSV Summary Report saved in $outputCSV " -ForegroundColor Cyan
 }
-else 
-{
+else {
     Write-Host (get-date -Format "o") ": No files to delete. Exiting script" -ForegroundColor Green
 }
 #...................................
@@ -677,5 +646,5 @@ else
 #...................................
 
 
-if ($logDirectory) {Write-Host (get-date -Format "o") ": Transcript Log saved in $logfile " -ForegroundColor Cyan}
+if ($logDirectory) { Write-Host (get-date -Format "o") ": Transcript Log saved in $logfile " -ForegroundColor Cyan }
 Stop-TxnLogging
