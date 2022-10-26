@@ -226,32 +226,32 @@ if ($sendEmail)
 {
     if (!$mailSender)
     {
-        Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": ERROR: A valid mailSender email address is not specified." -ForegroundColor Yellow
+        Write-Host (get-date -Format "o") ": ERROR: A valid mailSender email address is not specified." -ForegroundColor Yellow
         $isAllGood = $false
     }
 
     if (!$recipients)
     {
-        Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": ERROR: No recipients specified." -ForegroundColor Yellow
+        Write-Host (get-date -Format "o") ": ERROR: No recipients specified." -ForegroundColor Yellow
         $isAllGood = $false
     }
 
     if (!$smtpServer )
     {
-        Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": ERROR: No SMTP Server specified." -ForegroundColor Yellow
+        Write-Host (get-date -Format "o") ": ERROR: No SMTP Server specified." -ForegroundColor Yellow
         $isAllGood = $false
     }
 
     if (!$smtpPort )
     {
-        Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": ERROR: No SMTP Port specified." -ForegroundColor Yellow
+        Write-Host (get-date -Format "o") ": ERROR: No SMTP Port specified." -ForegroundColor Yellow
         $isAllGood = $false
     }
 }
 
 if ($isAllGood -eq $false)
 {
-    Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": ERROR: Exiting Script." -ForegroundColor Yellow
+    Write-Host (get-date -Format "o") ": ERROR: Exiting Script." -ForegroundColor Yellow
     EXIT
 }
 #...................................
@@ -372,7 +372,7 @@ $css_string = @'
 #Region PATHS
 #...................................
 $today = Get-Date
-[string]$fileSuffix = '{0:dd-MMM-yyyy_hh-mm_tt}' -f $today
+[string]$fileSuffix = '{0:yyyy-MM-ddTHH_mm_ss}' -f $today
 $today = $today.ToString("F")
 $today = "$($today) $($timeZoneInfo.DisplayName.ToString().Split(" ")[0])"
 $logFile = "$($logDirectory)\Log_$($fileSuffix).log"
@@ -436,7 +436,7 @@ foreach ($fInclude in $Include){
 #...................................
 if ($filesToDelete)
 {
-    Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": Found Total of $($filesToDelete.Count) files" -ForegroundColor Green
+    Write-Host (get-date -Format "o") ": Found Total of $($filesToDelete.Count) files" -ForegroundColor Green
     $resultLog = @()
     $successful = 0
     $failed = 0
@@ -453,13 +453,13 @@ if ($filesToDelete)
             $temp.Status = "Success"
             $successful = $successful+1
             $deletedSize = $deletedSize + $file.Length
-            Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": Delete $($file.FullName) - Success " -ForegroundColor Green
+            Write-Host (get-date -Format "o") ": Delete $($file.FullName) - Success " -ForegroundColor Green
 		}
 		catch {
             $temp.Status = "Failed"
             $failed = $failed+1
             $failedSize = $failedSize + $file.Length
-			Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": Delete $($file.FullName) - Failed " -ForegroundColor Red
+			Write-Host (get-date -Format "o") ": Delete $($file.FullName) - Failed " -ForegroundColor Red
 		}        
         $resultLog += $temp
     }
@@ -473,7 +473,7 @@ if ($filesToDelete)
     $summary.TotalSuccessfulDeletionSize = "{0:N0}" -f $deletedSize
     $summary.TotalFailedDeletionSize = "{0:N0}" -f $failedSize
     Write-Host ""
-    Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": SUMMARY:"
+    Write-Host (get-date -Format "o") ": SUMMARY:"
     $summary
 
     #...................................
@@ -489,7 +489,7 @@ if ($filesToDelete)
         $mailSubject = "File Deletion Task Summary"
     }
    
-    $htmlBody += "<html><head><title>$($mailSubject) - $($Today)</title><meta http-equiv=""Content-Type"" content=""text/html; charset=ISO-8859-1"" />"
+    $htmlBody += "<html><head><title>$($mailSubject) - $($today)</title><meta http-equiv=""Content-Type"" content=""text/html; charset=ISO-8859-1"" />"
     $htmlBody += $css_string
     $htmlBody += '</head><body><p><font size="2" face="Tahoma">'
     $htmlBody += '<table id="HeadingInfo">'
@@ -549,7 +549,7 @@ if ($filesToDelete)
         $mailParams = @{
             From = $mailSender
             To = $recipients
-            Subject = $mailSubject + ": " + ('{0:dd-MMM-yyyy hh:mm tt}' -f $Today)
+            Subject = $mailSubject + ": " + ('{0:yyyy-MM-dd-hh:mmTHH:mm:ss}' -f $today)
             Body = $htmlBody
             BodyAsHTML = $true
             smtpServer = $smtpServer
@@ -563,7 +563,7 @@ if ($filesToDelete)
             $mailParams += @{credential = $smtpCredential}
         }
 
-        Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": Sending email to" ($recipients -join ",") -ForegroundColor Green
+        Write-Host (get-date -Format "o") ": Sending email to" ($recipients -join ",") -ForegroundColor Green
 
         #Send message
         Send-MailMessage @mailParams
@@ -579,7 +579,7 @@ if ($filesToDelete)
     {
         $teamsMessage = ConvertTo-Json -Depth 4 @{
             title = $mailSubject
-            text = ('{0:dd-MMM-yyyy hh:mm tt}' -f $Today)
+            text = ('{0:yyyy-MM-dd-hh:mmTHH:mm:ss}' -f $today)
     
             sections = @(
                 @{
@@ -648,7 +648,7 @@ if ($filesToDelete)
             )
         }
 
-        Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": Sending Teams Notification" -ForegroundColor Green
+        Write-Host (get-date -Format "o") ": Sending Teams Notification" -ForegroundColor Green
         
         foreach ($uri in $notifyTeams)
         {
@@ -665,17 +665,17 @@ if ($filesToDelete)
     #EndRegion TEAMS
     #...................................
 
-    Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": HTML Summary Report saved in $outputHTML " -ForegroundColor Cyan
-    Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": CSV Summary Report saved in $outputCSV " -ForegroundColor Cyan
+    Write-Host (get-date -Format "o") ": HTML Summary Report saved in $outputHTML " -ForegroundColor Cyan
+    Write-Host (get-date -Format "o") ": CSV Summary Report saved in $outputCSV " -ForegroundColor Cyan
 }
 else 
 {
-    Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": No files to delete. Exiting script" -ForegroundColor Green
+    Write-Host (get-date -Format "o") ": No files to delete. Exiting script" -ForegroundColor Green
 }
 #...................................
 #EndRegion FILE DELETION
 #...................................
 
 
-if ($logDirectory) {Write-Host (get-date -Format "dd-MMM-yyyy hh:mm:ss tt") ": Transcript Log saved in $logfile " -ForegroundColor Cyan}
+if ($logDirectory) {Write-Host (get-date -Format "o") ": Transcript Log saved in $logfile " -ForegroundColor Cyan}
 Stop-TxnLogging
